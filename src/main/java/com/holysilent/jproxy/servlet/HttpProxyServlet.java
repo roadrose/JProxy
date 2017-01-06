@@ -1,5 +1,6 @@
 package com.holysilent.jproxy.servlet;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpClient;
@@ -41,7 +42,7 @@ public class HttpProxyServlet extends HttpServlet{
         try {
             InputStream in = getClass().getClassLoader().getResourceAsStream("init.properties");
             p.load(in);
-            this.marathonURL = p.getProperty("marathon-ui");
+            this.marathonURL = p.getProperty("marathon-ui") == null ? "" : p.getProperty("marathon-ui");
             logger.info("param {} : {}", new Object[]{"marathon-ui", this.marathonURL});
         }catch (IOException e) {
             e.printStackTrace();
@@ -60,8 +61,17 @@ public class HttpProxyServlet extends HttpServlet{
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String queryStr = req.getRequestURI();
-        String targetURL = this.marathonURL + queryStr;
+        if (StringUtils.isBlank(this.marathonURL)) {
+            resp.setStatus(404);
+            resp.getWriter().write("sorry, marathon ui configured error.");
+            resp.getWriter().flush();
+            resp.getWriter().close();
+            return;
+        }
+
+        String reqURIStr = req.getRequestURI();
+        String queryStr = req.getQueryString();
+        String targetURL = this.marathonURL + reqURIStr + (StringUtils.isBlank(queryStr) ? "" : "?"+queryStr);
         logger.info("targetURL : {}", targetURL);
         HttpGet get = new HttpGet(targetURL);
 
@@ -157,6 +167,5 @@ public class HttpProxyServlet extends HttpServlet{
                 }
             }
         }
-
     }
 }
