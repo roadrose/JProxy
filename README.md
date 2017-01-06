@@ -1,2 +1,2 @@
 # JProxy
-java http proxy,this version developed based by servlet.
+java http proxy,this version is based on servlet.
