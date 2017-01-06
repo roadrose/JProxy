@@ -1,5 +1,6 @@
 package com.holysilent.jproxy.servlet;
 
+import com.holysilent.jproxy.constant.Constants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -32,18 +33,17 @@ import java.util.Properties;
  * Created by silent on 2017/1/6.
  */
 public class HttpProxyServlet extends HttpServlet{
-
-    private Properties p = new Properties();
-    private String marathonURL = "http://10.124.128.87:8080";
+    private String targetURL;
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         try {
-            InputStream in = getClass().getClassLoader().getResourceAsStream("init.properties");
+            Properties p = new Properties();
+            InputStream in = getClass().getClassLoader().getResourceAsStream(Constants.INIT_FILE);
             p.load(in);
-            this.marathonURL = p.getProperty("marathon-ui") == null ? "" : p.getProperty("marathon-ui");
-            logger.info("param {} : {}", new Object[]{"marathon-ui", this.marathonURL});
+            this.targetURL = p.getProperty(Constants.TARGET_APP_BASE_URL) == null ? "" : p.getProperty(Constants.TARGET_APP_BASE_URL);
+            logger.info("param {} : {}", new Object[]{Constants.TARGET_APP_BASE_URL, this.targetURL});
         }catch (IOException e) {
             e.printStackTrace();
         }
@@ -55,15 +55,14 @@ public class HttpProxyServlet extends HttpServlet{
             HttpClient httpClient = HttpClients.createDefault();
             req.getSession().setAttribute("httpclient",httpClient);
         }
-
         super.service(req, resp);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (StringUtils.isBlank(this.marathonURL)) {
+        if (StringUtils.isBlank(this.targetURL)) {
             resp.setStatus(404);
-            resp.getWriter().write("sorry, marathon ui configured error.");
+            resp.getWriter().write("<h1>sorry, marathon ui configured error.</h1>");
             resp.getWriter().flush();
             resp.getWriter().close();
             return;
@@ -71,7 +70,7 @@ public class HttpProxyServlet extends HttpServlet{
 
         String reqURIStr = req.getRequestURI();
         String queryStr = req.getQueryString();
-        String targetURL = this.marathonURL + reqURIStr + (StringUtils.isBlank(queryStr) ? "" : "?"+queryStr);
+        String targetURL = this.targetURL + reqURIStr + (StringUtils.isBlank(queryStr) ? "" : "?"+queryStr);
         logger.info("targetURL : {}", targetURL);
         HttpGet get = new HttpGet(targetURL);
 
