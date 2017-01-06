@@ -1,5 +1,4 @@
 # JProxy
-<h1>JProxy</h1><br>
 <p>
    The goal is to make a generic Java proxy forwarding component.<br>
    This version is based on servlet.
